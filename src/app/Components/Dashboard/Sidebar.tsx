@@ -73,9 +73,9 @@ const menuItems: MenuItem[] = [
       { id: 'import-opening-stock', label: 'Import Opening Stock', href: '/dashboard/products/import-opening-stock' },
       { id: 'selling-price-group', label: 'Selling Price Group', href: '/dashboard/products/selling-price-group' },
       { id: 'units', label: 'Units', href: '/dashboard/products/units' },
-      { id: 'categories', label: 'Categories' },
-      { id: 'brands', label: 'Brands' },
-      { id: 'warranties', label: 'Warranties' },
+      { id: 'categories', label: 'Categories', href: '/dashboard/products/categories' },
+      { id: 'brands', label: 'Brands', href: '/dashboard/products/brands' },
+      { id: 'warranties', label: 'Warranties', href: '/dashboard/products/warranties' },
     ] 
   },
   { 

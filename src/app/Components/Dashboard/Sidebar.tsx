@@ -83,9 +83,9 @@ const menuItems: MenuItem[] = [
     label: 'Purchases', 
     icon: ArrowDownToLine, 
     submenus: [
-      { id: 'all-purchases', label: 'List Purchases' },
-      { id: 'add-purchase', label: 'Add Purchase' },
-      { id: 'purchase-returns', label: 'Purchase Return' },
+      { id: 'all-purchases', label: 'List Purchases', href: '/dashboard/purchases' },
+      { id: 'add-purchase', label: 'Add Purchase', href: '/dashboard/purchases/add' },
+      { id: 'purchase-returns', label: 'Purchase Return', href: '/dashboard/purchases/returns' },
     ] 
   },
   { 
@@ -197,6 +197,9 @@ export default function Sidebar({
     if (pathname?.startsWith('/dashboard/products')) {
       setExpandedItems((prev) => ({ ...prev, products: true }));
     }
+    if (pathname?.startsWith('/dashboard/purchases')) {
+      setExpandedItems((prev) => ({ ...prev, purchases: true }));
+    }
   }, [pathname]);
 
   const toggleSubmenu = (id: string) => {
@@ -278,6 +281,8 @@ export default function Sidebar({
               pathname?.startsWith('/dashboard/import-contacts')
             : item.id === 'products'
             ? pathname?.startsWith('/dashboard/products')
+            : item.id === 'purchases'
+            ? pathname?.startsWith('/dashboard/purchases')
             : activeItem === item.id;
 
           const itemClass = `w-full flex items-center justify-between px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 cursor-pointer ${

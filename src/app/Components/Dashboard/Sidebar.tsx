@@ -1,7 +1,8 @@
-﻿'use client';
+'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   Users,
@@ -42,9 +43,9 @@ const menuItems: MenuItem[] = [
     label: 'User Management', 
     icon: Users, 
     submenus: [
-      { id: 'users', label: 'Users' },
-      { id: 'roles', label: 'Roles' },
-      { id: 'sales-commission', label: 'Sales Commission Agents' },
+      { id: 'users', label: 'Users', href: '/dashboard/users' },
+      { id: 'roles', label: 'Roles', href: '/dashboard/rules' },
+      { id: 'sales-commission', label: 'Sales Commission Agents', href: '/dashboard/sales-commission-agents' },
     ] 
   },
   { 
@@ -162,10 +163,23 @@ export default function Sidebar({
   activeItem = 'home',
   onSelectItem,
 }: SidebarProps) {
+  const pathname = usePathname();
+
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
+    'user-management': true,
     products: false,
     sell: false,
   });
+
+  useEffect(() => {
+    if (
+      pathname?.startsWith('/dashboard/users') ||
+      pathname?.startsWith('/dashboard/rules') ||
+      pathname?.startsWith('/dashboard/sales-commission-agents')
+    ) {
+      setExpandedItems((prev) => ({ ...prev, 'user-management': true }));
+    }
+  }, [pathname]);
 
   const toggleSubmenu = (id: string) => {
     setExpandedItems((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -213,7 +227,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onCloseMobileMenu}
-            className="text-slate-300 hover:text-white p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors active:scale-95 shrink-0 ml-2"
+            className="text-slate-300 hover:text-white p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors active:scale-95 shrink-0 ml-2 cursor-pointer"
             title="Close Sidebar"
             aria-label="Close Sidebar"
           >
@@ -229,62 +243,119 @@ export default function Sidebar({
       >
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeItem === item.id;
           const hasSubmenu = Boolean(item.submenus && item.submenus.length > 0);
           const isExpanded = Boolean(expandedItems[item.id]);
 
+          // Check if item is active
+          const isItemActive = item.href
+            ? pathname === item.href
+            : item.id === 'user-management'
+            ? pathname?.startsWith('/dashboard/users') ||
+              pathname?.startsWith('/dashboard/rules') ||
+              pathname?.startsWith('/dashboard/sales-commission-agents')
+            : activeItem === item.id;
+
+          const itemClass = `w-full flex items-center justify-between px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 cursor-pointer ${
+            isItemActive
+              ? 'bg-gradient-to-r from-indigo-600/30 to-indigo-500/15 text-white border border-indigo-500/40 shadow-[0_0_18px_rgba(99,102,241,0.2)] font-semibold'
+              : 'text-slate-400 hover:bg-white/[0.05] hover:text-white border border-transparent'
+          }`;
+
           return (
             <div key={item.id} className="rounded-xl">
-              <button
-                type="button"
-                onClick={() => {
-                  if (onSelectItem) onSelectItem(item.id);
-                  if (hasSubmenu) {
-                    toggleSubmenu(item.id);
-                  } else if (isMobile && onCloseMobileMenu) {
-                    onCloseMobileMenu();
-                  }
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 cursor-pointer ${
-                  isActive
-                    ? 'bg-gradient-to-r from-indigo-600/30 to-indigo-500/15 text-white border border-indigo-500/40 shadow-[0_0_18px_rgba(99,102,241,0.2)] font-semibold'
-                    : 'text-slate-400 hover:bg-white/[0.05] hover:text-white border border-transparent'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                  <Icon
-                    size={18}
-                    className={isActive ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.5)] shrink-0' : 'text-slate-400 shrink-0'}
-                  />
-                  <span className="truncate">{item.label}</span>
-                </div>
+              {item.href && !hasSubmenu ? (
+                <Link
+                  href={item.href}
+                  onClick={() => {
+                    if (onSelectItem) onSelectItem(item.id);
+                    if (isMobile && onCloseMobileMenu) onCloseMobileMenu();
+                  }}
+                  className={itemClass}
+                >
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <Icon
+                      size={18}
+                      className={isItemActive ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.5)] shrink-0' : 'text-slate-400 shrink-0'}
+                    />
+                    <span className="truncate">{item.label}</span>
+                  </div>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onSelectItem) onSelectItem(item.id);
+                    if (hasSubmenu) {
+                      toggleSubmenu(item.id);
+                    } else if (isMobile && onCloseMobileMenu) {
+                      onCloseMobileMenu();
+                    }
+                  }}
+                  className={itemClass}
+                >
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <Icon
+                      size={18}
+                      className={isItemActive ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.5)] shrink-0' : 'text-slate-400 shrink-0'}
+                    />
+                    <span className="truncate">{item.label}</span>
+                  </div>
 
-                {hasSubmenu && (
-                  <span className="text-slate-500 transition-transform duration-200 shrink-0 ml-2">
-                    {isExpanded ? (
-                      <ChevronDown size={14} strokeWidth={2.5} />
-                    ) : (
-                      <ChevronLeft size={14} strokeWidth={2.5} />
-                    )}
-                  </span>
-                )}
-              </button>
+                  {hasSubmenu && (
+                    <span className="text-slate-500 transition-transform duration-200 shrink-0 ml-2">
+                      {isExpanded ? (
+                        <ChevronDown size={14} strokeWidth={2.5} />
+                      ) : (
+                        <ChevronLeft size={14} strokeWidth={2.5} />
+                      )}
+                    </span>
+                  )}
+                </button>
+              )}
 
               {/* Submenu Accordion */}
               {hasSubmenu && isExpanded && (
                 <div className="mt-1 mb-2 ml-3.5 sm:ml-4 pl-2.5 sm:pl-3 border-l border-indigo-500/30 space-y-1">
-                  {item.submenus!.map((sub) => (
-                    <button
-                      key={sub.id}
-                      type="button"
-                      onClick={() => {
-                        if (isMobile && onCloseMobileMenu) onCloseMobileMenu();
-                      }}
-                      className="w-full text-left text-[11px] sm:text-xs text-slate-400 hover:text-indigo-200 hover:bg-indigo-500/10 py-1.5 px-2.5 rounded-lg font-medium transition-colors flex items-center justify-between cursor-pointer"
-                    >
-                      <span className="truncate">{sub.label}</span>
-                    </button>
-                  ))}
+                  {item.submenus!.map((sub) => {
+                    const isSubActive = sub.href
+                      ? pathname === sub.href || (sub.href !== '/dashboard' && pathname?.startsWith(sub.href))
+                      : false;
+
+                    if (sub.href) {
+                      return (
+                        <Link
+                          key={sub.id}
+                          href={sub.href}
+                          onClick={() => {
+                            if (isMobile && onCloseMobileMenu) onCloseMobileMenu();
+                          }}
+                          className={`w-full text-left text-[11px] sm:text-xs py-2 px-2.5 rounded-lg font-medium transition-all flex items-center justify-between cursor-pointer ${
+                            isSubActive
+                              ? 'bg-indigo-600/30 text-cyan-300 border border-indigo-500/40 font-semibold shadow-[0_0_12px_rgba(99,102,241,0.2)]'
+                              : 'text-slate-400 hover:text-indigo-200 hover:bg-white/[0.05]'
+                          }`}
+                        >
+                          <span className="truncate">{sub.label}</span>
+                          {isSubActive && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee] shrink-0" />
+                          )}
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => {
+                          if (isMobile && onCloseMobileMenu) onCloseMobileMenu();
+                        }}
+                        className="w-full text-left text-[11px] sm:text-xs text-slate-400 hover:text-indigo-200 hover:bg-white/[0.05] py-2 px-2.5 rounded-lg font-medium transition-colors flex items-center justify-between cursor-pointer"
+                      >
+                        <span className="truncate">{sub.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -56,6 +56,7 @@ const menuItems: MenuItem[] = [
       { id: 'suppliers', label: 'Suppliers', href: '/dashboard/suppliers' },
       { id: 'customers', label: 'Customers', href: '/dashboard/customers' },
       { id: 'customer-groups', label: 'Customer Groups', href: '/dashboard/customer-groups' },
+      { id: 'import-contacts', label: 'Import Contacts', href: '/dashboard/import-contacts' },
     ] 
   },
   { 
@@ -182,7 +183,8 @@ export default function Sidebar({
     if (
       pathname?.startsWith('/dashboard/suppliers') || 
       pathname?.startsWith('/dashboard/customers') ||
-      pathname?.startsWith('/dashboard/customer-groups')
+      pathname?.startsWith('/dashboard/customer-groups') ||
+      pathname?.startsWith('/dashboard/import-contacts')
     ) {
       setExpandedItems((prev) => ({ ...prev, contacts: true }));
     }
@@ -263,7 +265,8 @@ export default function Sidebar({
             : item.id === 'contacts'
             ? pathname?.startsWith('/dashboard/suppliers') || 
               pathname?.startsWith('/dashboard/customers') ||
-              pathname?.startsWith('/dashboard/customer-groups')
+              pathname?.startsWith('/dashboard/customer-groups') ||
+              pathname?.startsWith('/dashboard/import-contacts')
             : activeItem === item.id;
 
           const itemClass = `w-full flex items-center justify-between px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 cursor-pointer ${

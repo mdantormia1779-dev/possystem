@@ -66,10 +66,16 @@ const menuItems: MenuItem[] = [
     submenus: [
       { id: 'all-products', label: 'List Products', href: '/dashboard/products' },
       { id: 'add-product', label: 'Add Product', href: '/dashboard/products/create' },
-      { id: 'print-labels', label: 'Print Labels' },
+      { id: 'update-price', label: 'Update Price', href: '/dashboard/products/update-price' },
+      { id: 'print-labels', label: 'Print Labels', href: '/dashboard/products/print-labels' },
+      { id: 'variations', label: 'Variations', href: '/dashboard/products/variations' },
+      { id: 'import-products', label: 'Import Products', href: '/dashboard/products/import' },
+      { id: 'import-opening-stock', label: 'Import Opening Stock', href: '/dashboard/products/import-opening-stock' },
+      { id: 'selling-price-group', label: 'Selling Price Group', href: '/dashboard/products/selling-price-group' },
+      { id: 'units', label: 'Units', href: '/dashboard/products/units' },
       { id: 'categories', label: 'Categories' },
       { id: 'brands', label: 'Brands' },
-      { id: 'units', label: 'Units' },
+      { id: 'warranties', label: 'Warranties' },
     ] 
   },
   { 

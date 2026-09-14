@@ -54,8 +54,8 @@ const menuItems: MenuItem[] = [
     icon: BookUser, 
     submenus: [
       { id: 'suppliers', label: 'Suppliers', href: '/dashboard/suppliers' },
-      { id: 'customers', label: 'Customers' },
-      { id: 'customer-groups', label: 'Customer Groups' },
+      { id: 'customers', label: 'Customers', href: '/dashboard/customers' },
+      { id: 'customer-groups', label: 'Customer Groups', href: '/dashboard/customer-groups' },
     ] 
   },
   { 
@@ -179,7 +179,11 @@ export default function Sidebar({
     ) {
       setExpandedItems((prev) => ({ ...prev, 'user-management': true }));
     }
-    if (pathname?.startsWith('/dashboard/suppliers')) {
+    if (
+      pathname?.startsWith('/dashboard/suppliers') || 
+      pathname?.startsWith('/dashboard/customers') ||
+      pathname?.startsWith('/dashboard/customer-groups')
+    ) {
       setExpandedItems((prev) => ({ ...prev, contacts: true }));
     }
   }, [pathname]);
@@ -257,7 +261,9 @@ export default function Sidebar({
               pathname?.startsWith('/dashboard/rules') ||
               pathname?.startsWith('/dashboard/sales-commission-agents')
             : item.id === 'contacts'
-            ? pathname?.startsWith('/dashboard/suppliers')
+            ? pathname?.startsWith('/dashboard/suppliers') || 
+              pathname?.startsWith('/dashboard/customers') ||
+              pathname?.startsWith('/dashboard/customer-groups')
             : activeItem === item.id;
 
           const itemClass = `w-full flex items-center justify-between px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 cursor-pointer ${

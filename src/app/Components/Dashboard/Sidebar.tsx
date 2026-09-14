@@ -336,8 +336,19 @@ export default function Sidebar({
               {hasSubmenu && isExpanded && (
                 <div className="mt-1 mb-2 ml-3.5 sm:ml-4 pl-2.5 sm:pl-3 border-l border-indigo-500/30 space-y-1">
                   {item.submenus!.map((sub) => {
+                    const hasMoreSpecificSibling = item.submenus?.some(
+                      (sibling) =>
+                        sibling.href &&
+                        sibling.href !== sub.href &&
+                        sibling.href.startsWith(sub.href + '/') &&
+                        (pathname === sibling.href || pathname?.startsWith(sibling.href + '/'))
+                    );
+
                     const isSubActive = sub.href
-                      ? pathname === sub.href || (sub.href !== '/dashboard' && pathname?.startsWith(sub.href))
+                      ? pathname === sub.href ||
+                        (sub.href !== '/dashboard' &&
+                          pathname?.startsWith(sub.href + '/') &&
+                          !hasMoreSpecificSibling)
                       : false;
 
                     if (sub.href) {

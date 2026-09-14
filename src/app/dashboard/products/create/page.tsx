@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Info, 
   Plus, 
@@ -21,9 +21,34 @@ import {
   ArrowLeft,
   CheckCircle2
 } from 'lucide-react';
+import AddUnitModal, { NewUnitData } from '../AddUnitModal';
+import AddBrandModal, { NewBrandData } from '../AddBrandModal';
 
-export default function AddProductPage() {
+function ProductFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('editId');
+  const isEdit = Boolean(editId);
+
+  // Modals for + buttons
+  const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
+  const [isAddBrandOpen, setIsAddBrandOpen] = useState(false);
+
+  // Dynamic Options
+  const [unitOptions, setUnitOptions] = useState<string[]>([
+    'Pieces (Pc(s))',
+    'Box',
+    'Dozen',
+    'Kg',
+    'Meter',
+  ]);
+
+  const [brandOptions, setBrandOptions] = useState<string[]>([
+    'Please Select',
+    'Robin',
+    'MOTO WOLF',
+    'WD',
+  ]);
 
   // General Fields
   const [productName, setProductName] = useState('');
@@ -75,8 +100,99 @@ export default function AddProductPage() {
     setSellingExcTax(exc > 0 ? selling.toFixed(2) : '');
   }, [purchaseExcTax, marginPercent, applicableTax]);
 
+  // Pre-populate when in edit mode (matching screenshot media_1789380411911.png)
+  useEffect(() => {
+    if (editId) {
+      if (editId === '1') {
+        setProductName('Head Light');
+        setSku('0003');
+        setBarcodeType('Code 128 (C128)');
+        setUnit('Pieces (Pc(s))');
+        setBrand('Robin');
+        setCategory('Please Select');
+        setManageStock(true);
+        setAlertQuantity('');
+        setApplicableTax('None');
+        setTaxType('Exclusive');
+        setProductType('Single');
+        setPurchaseExcTax('5000.00');
+        setPurchaseIncTax('5000.00');
+        setMarginPercent('400.00');
+        setSellingExcTax('25000.00');
+      } else if (editId === '2') {
+        setProductName('MOBILE STAND');
+        setSku('0002');
+        setBarcodeType('Code 128 (C128)');
+        setUnit('Pieces (Pc(s))');
+        setBrand('MOTO WOLF');
+        setCategory('Please Select');
+        setManageStock(true);
+        setAlertQuantity('10');
+        setApplicableTax('None');
+        setTaxType('Exclusive');
+        setProductType('Single');
+        setPurchaseExcTax('1000.00');
+        setPurchaseIncTax('1000.00');
+        setMarginPercent('20.00');
+        setSellingExcTax('1200.00');
+      } else if (editId === '3') {
+        setProductName('TEST');
+        setSku('00017896036');
+        setBarcodeType('Code 128 (C128)');
+        setUnit('Pieces (Pc(s))');
+        setBrand('WD');
+        setCategory('Please Select');
+        setManageStock(true);
+        setAlertQuantity('2');
+        setApplicableTax('None');
+        setTaxType('Exclusive');
+        setProductType('Single');
+        setPurchaseExcTax('400.00');
+        setPurchaseIncTax('400.00');
+        setMarginPercent('80.00');
+        setSellingExcTax('720.00');
+      } else if (editId === '4') {
+        setProductName('WD 400');
+        setSku('0001');
+        setBarcodeType('Code 128 (C128)');
+        setUnit('Pieces (Pc(s))');
+        setBrand('WD');
+        setCategory('Please Select');
+        setManageStock(true);
+        setAlertQuantity('5');
+        setApplicableTax('None');
+        setTaxType('Exclusive');
+        setProductType('Single');
+        setPurchaseExcTax('120.00');
+        setPurchaseIncTax('120.00');
+        setMarginPercent('33.33');
+        setSellingExcTax('160.00');
+      } else {
+        // Fallback default mock
+        setProductName('Head Light');
+        setSku('0003');
+        setBrand('Robin');
+        setPurchaseExcTax('5000.00');
+        setPurchaseIncTax('5000.00');
+        setMarginPercent('400.00');
+        setSellingExcTax('25000.00');
+      }
+    }
+  }, [editId]);
+
   const handleRemoveLocation = (loc: string) => {
     setBusinessLocations((prev) => prev.filter((item) => item !== loc));
+  };
+
+  const handleSaveUnit = (data: NewUnitData) => {
+    const unitLabel = `${data.name} (${data.shortName})`;
+    setUnitOptions((prev) => (prev.includes(unitLabel) ? prev : [...prev, unitLabel]));
+    setUnit(unitLabel);
+  };
+
+  const handleSaveBrand = (data: NewBrandData) => {
+    setBrandOptions((prev) => (prev.includes(data.brandName) ? prev : [...prev, data.brandName]));
+    setBrand(data.brandName);
   };
 
   const handleSave = (redirectMode: 'list' | 'another' | 'stock') => {
@@ -110,7 +226,7 @@ export default function AddProductPage() {
             <ArrowLeft size={18} />
           </Link>
           <h1 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-indigo-300 tracking-tight">
-            Add new product
+            {isEdit ? 'Edit Product' : 'Add new product'}
           </h1>
         </div>
       </div>
@@ -118,7 +234,7 @@ export default function AddProductPage() {
       {submitted && (
         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
           <CheckCircle2 size={18} />
-          <span>Product saved successfully! Redirecting...</span>
+          <span>{isEdit ? 'Product updated successfully! Redirecting...' : 'Product saved successfully! Redirecting...'}</span>
         </div>
       )}
 
@@ -195,17 +311,18 @@ export default function AddProductPage() {
                   onChange={(e) => setUnit(e.target.value)}
                   className="w-full bg-[#08051e] border border-white/15 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500/60 cursor-pointer appearance-none pr-9"
                 >
-                  <option value="Pieces (Pc(s))">Pieces (Pc(s))</option>
-                  <option value="Box">Box</option>
-                  <option value="Dozen">Dozen</option>
-                  <option value="Kg">Kg</option>
-                  <option value="Meter">Meter</option>
+                  {unitOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
               <button
                 type="button"
-                className="w-9 h-9 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/40 text-violet-300 flex items-center justify-center cursor-pointer transition-colors"
+                onClick={() => setIsAddUnitOpen(true)}
+                className="w-9 h-9 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/40 text-violet-300 flex items-center justify-center cursor-pointer transition-colors active:scale-95"
                 title="Add Unit"
               >
                 <Plus size={16} />
@@ -222,16 +339,18 @@ export default function AddProductPage() {
                   onChange={(e) => setBrand(e.target.value)}
                   className="w-full bg-[#08051e] border border-white/15 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500/60 cursor-pointer appearance-none pr-9"
                 >
-                  <option value="Please Select">Please Select</option>
-                  <option value="Robin">Robin</option>
-                  <option value="MOTO WOLF">MOTO WOLF</option>
-                  <option value="WD">WD</option>
+                  {brandOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
               <button
                 type="button"
-                className="w-9 h-9 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/40 text-violet-300 flex items-center justify-center cursor-pointer transition-colors"
+                onClick={() => setIsAddBrandOpen(true)}
+                className="w-9 h-9 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/40 text-violet-300 flex items-center justify-center cursor-pointer transition-colors active:scale-95"
                 title="Add Brand"
               >
                 <Plus size={16} />
@@ -613,33 +732,85 @@ export default function AddProductPage() {
 
       </div>
 
-      {/* Bottom Buttons (matching screenshot) */}
+      {/* Bottom Buttons (matching screenshots) */}
       <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-        <button
-          type="button"
-          onClick={() => handleSave('stock')}
-          className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-md active:scale-95 cursor-pointer"
-        >
-          Save & Add Opening Stock
-        </button>
+        {isEdit ? (
+          <>
+            <button
+              type="button"
+              onClick={() => handleSave('stock')}
+              className="px-6 py-2.5 rounded-xl bg-[#525596] hover:bg-[#434685] text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              Update & Edit Opening Stock
+            </button>
 
-        <button
-          type="button"
-          onClick={() => handleSave('another')}
-          className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition-all shadow-md active:scale-95 cursor-pointer"
-        >
-          Save And Add Another
-        </button>
+            <button
+              type="button"
+              onClick={() => handleSave('another')}
+              className="px-6 py-2.5 rounded-xl bg-[#d81b60] hover:bg-[#c2185b] text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              Update And Add Another
+            </button>
 
-        <button
-          type="button"
-          onClick={() => handleSave('list')}
-          className="px-7 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-all shadow-md shadow-violet-600/25 active:scale-95 cursor-pointer"
-        >
-          Save
-        </button>
+            <button
+              type="button"
+              onClick={() => handleSave('list')}
+              className="px-7 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs transition-all shadow-md shadow-violet-600/25 active:scale-95 cursor-pointer"
+            >
+              Update
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => handleSave('stock')}
+              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              Save & Add Opening Stock
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSave('another')}
+              className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              Save And Add Another
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSave('list')}
+              className="px-7 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs transition-all shadow-md shadow-violet-600/25 active:scale-95 cursor-pointer"
+            >
+              Save
+            </button>
+          </>
+        )}
       </div>
 
+      {/* Add Unit Modal (matching media_1789381517226.png) */}
+      <AddUnitModal
+        isOpen={isAddUnitOpen}
+        onClose={() => setIsAddUnitOpen(false)}
+        onSave={handleSaveUnit}
+      />
+
+      {/* Add Brand Modal (matching media_1789381540136.png) */}
+      <AddBrandModal
+        isOpen={isAddBrandOpen}
+        onClose={() => setIsAddBrandOpen(false)}
+        onSave={handleSaveBrand}
+      />
+
     </div>
+  );
+}
+
+export default function AddProductPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-400 text-xs">Loading product editor...</div>}>
+      <ProductFormContent />
+    </Suspense>
   );
 }

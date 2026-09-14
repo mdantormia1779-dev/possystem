@@ -22,6 +22,15 @@ import {
 } from 'lucide-react';
 import ExportToolbar, { ColumnOption } from '@/app/Components/Dashboard/ExportToolbar';
 import { ColumnDef, exportToCSV, exportToExcel, exportToPDF, printTable } from '@/app/utils/tableExport';
+import ViewProductModal from './ViewProductModal';
+import DeleteProductModal from './DeleteProductModal';
+import { 
+  BulkDeleteModal, 
+  AddToLocationModal, 
+  RemoveFromLocationModal, 
+  BulkDeactivateModal 
+} from './BulkActionModals';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export interface ProductItem {
   id: string;
@@ -139,8 +148,33 @@ export default function ProductsPage() {
   const [openActionId, setOpenActionId] = useState<string | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // Quick View Modal
+  // Modals
   const [viewingProduct, setViewingProduct] = useState<ProductItem | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<ProductItem | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Bulk Action Modals
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [isAddToLocationOpen, setIsAddToLocationOpen] = useState(false);
+  const [isRemoveFromLocationOpen, setIsRemoveFromLocationOpen] = useState(false);
+  const [isBulkDeactivateOpen, setIsBulkDeactivateOpen] = useState(false);
+
+  // Toast feedback
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'warning' | 'info' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'warning' | 'info' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3500);
+  };
+
+  // Reset page on filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, filterCategory, filterBrand, filterLocation, activeTab, entriesCount]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -264,29 +298,106 @@ export default function ProductsPage() {
     }
   };
 
-  // Bulk Delete
-  const handleBulkDelete = () => {
+  // Bulk Handlers & Triggers
+  const handleBulkDeleteClick = () => {
     if (selectedIds.length === 0) {
-      alert('Please select products to delete.');
+      showToast('Please select at least one product using the checkboxes.', 'warning');
       return;
     }
-    if (confirm(`Delete ${selectedIds.length} selected product(s)?`)) {
-      setProducts((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
-      setSelectedIds([]);
-    }
+    setIsBulkDeleteOpen(true);
   };
 
-  // Bulk Deactivate
-  const handleBulkDeactivate = () => {
+  const handleAddToLocationClick = () => {
     if (selectedIds.length === 0) {
-      alert('Please select products to deactivate.');
+      showToast('Please select at least one product using the checkboxes.', 'warning');
       return;
     }
+    setIsAddToLocationOpen(true);
+  };
+
+  const handleRemoveFromLocationClick = () => {
+    if (selectedIds.length === 0) {
+      showToast('Please select at least one product using the checkboxes.', 'warning');
+      return;
+    }
+    setIsRemoveFromLocationOpen(true);
+  };
+
+  const handleBulkDeactivateClick = () => {
+    if (selectedIds.length === 0) {
+      showToast('Please select at least one product using the checkboxes.', 'warning');
+      return;
+    }
+    setIsBulkDeactivateOpen(true);
+  };
+
+  // Bulk Confirmations
+  const confirmBulkDelete = () => {
+    const count = selectedIds.length;
+    setProducts((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
+    setSelectedIds([]);
+    setIsBulkDeleteOpen(false);
+    showToast(`Successfully deleted ${count} product(s).`, 'success');
+  };
+
+  const confirmAddToLocation = (loc: string) => {
+    const count = selectedIds.length;
     setProducts((prev) =>
-      prev.map((p) => (selectedIds.includes(p.id) ? { ...p, status: 'inactive' } : p))
+      prev.map((p) => (selectedIds.includes(p.id) ? { ...p, businessLocation: loc } : p))
     );
     setSelectedIds([]);
+    setIsAddToLocationOpen(false);
+    showToast(`Successfully assigned location "${loc}" to ${count} product(s).`, 'success');
   };
+
+  const confirmRemoveFromLocation = (loc: string) => {
+    const count = selectedIds.length;
+    setProducts((prev) =>
+      prev.map((p) =>
+        selectedIds.includes(p.id)
+          ? {
+              ...p,
+              businessLocation:
+                loc === 'All Locations'
+                  ? '-'
+                  : p.businessLocation === loc
+                  ? '-'
+                  : p.businessLocation,
+            }
+          : p
+      )
+    );
+    setSelectedIds([]);
+    setIsRemoveFromLocationOpen(false);
+    showToast(`Successfully removed location for ${count} product(s).`, 'success');
+  };
+
+  const confirmBulkDeactivate = (action: 'deactivate' | 'activate') => {
+    const count = selectedIds.length;
+    setProducts((prev) =>
+      prev.map((p) =>
+        selectedIds.includes(p.id)
+          ? { ...p, status: action === 'deactivate' ? 'inactive' : 'active' }
+          : p
+      )
+    );
+    setSelectedIds([]);
+    setIsBulkDeactivateOpen(false);
+    showToast(
+      `Successfully ${action === 'deactivate' ? 'deactivated' : 'activated'} ${count} product(s).`,
+      'success'
+    );
+  };
+
+  // Pagination calculations
+  const totalPages = Math.max(1, Math.ceil(sortedProducts.length / entriesCount));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedProducts = sortedProducts.slice(
+    (safeCurrentPage - 1) * entriesCount,
+    safeCurrentPage * entriesCount
+  );
+  const startEntry = sortedProducts.length === 0 ? 0 : (safeCurrentPage - 1) * entriesCount + 1;
+  const endEntry = Math.min(safeCurrentPage * entriesCount, sortedProducts.length);
 
   const visibleColCount = columns.filter((c) => c.visible).length + 1; // +1 for checkbox
 
@@ -624,7 +735,7 @@ export default function ProductsPage() {
                   </td>
                 </tr>
               ) : (
-                sortedProducts.slice(0, entriesCount).map((prod) => {
+                paginatedProducts.map((prod) => {
                   const isActionOpen = openActionId === prod.id;
                   const isChecked = selectedIds.includes(prod.id);
 
@@ -697,7 +808,10 @@ export default function ProductsPage() {
                                 {/* Delete */}
                                 <button
                                   type="button"
-                                  onClick={() => handleDeleteProduct(prod.id)}
+                                  onClick={() => {
+                                    setDeletingProduct(prod);
+                                    setOpenActionId(null);
+                                  }}
                                   className="w-full flex items-center gap-2.5 px-3 py-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
                                 >
                                   <Trash2 size={13} />
@@ -733,7 +847,14 @@ export default function ProductsPage() {
                       {/* Product Name */}
                       {isColVisible('name') && (
                         <td className="px-3.5 py-2.5 font-bold text-white">
-                          {prod.name}
+                          <div className="flex items-center gap-2">
+                            <span>{prod.name}</span>
+                            {prod.status === 'inactive' && (
+                              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                Inactive
+                              </span>
+                            )}
+                          </div>
                         </td>
                       )}
 
@@ -813,66 +934,120 @@ export default function ProductsPage() {
           </table>
         </div>
 
-        {/* 5. Bulk Action Toolbar (matching screenshot below table) */}
+        {/* 5. Bulk Action Toolbar (matching screenshot media_1789381117002.png) */}
         <div className="flex flex-wrap items-center gap-2.5 pt-4 border-t border-white/10 mt-4">
           <button
             type="button"
-            onClick={handleBulkDelete}
-            className="px-3 py-1.5 rounded-lg border border-rose-500/50 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold transition-all cursor-pointer"
+            onClick={handleBulkDeleteClick}
+            className="px-3.5 py-1.5 rounded-xl border border-rose-400 bg-rose-500/5 hover:bg-rose-500/15 text-rose-400 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-xs"
           >
-            Delete Selected
+            <span>Delete Selected</span>
+            {selectedIds.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-rose-500/20 text-[10px] font-bold">
+                {selectedIds.length}
+              </span>
+            )}
           </button>
+
           <button
             type="button"
-            onClick={() => alert(`Added ${selectedIds.length} items to location.`)}
-            className="px-3 py-1.5 rounded-lg border border-cyan-500/50 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs font-semibold transition-all cursor-pointer"
+            onClick={handleAddToLocationClick}
+            className="px-3.5 py-1.5 rounded-xl border border-cyan-400 bg-cyan-500/5 hover:bg-cyan-500/15 text-cyan-400 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-xs"
           >
-            Add to location
+            <span>Add to location</span>
+            {selectedIds.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-[10px] font-bold">
+                {selectedIds.length}
+              </span>
+            )}
           </button>
+
           <button
             type="button"
-            onClick={() => alert(`Removed ${selectedIds.length} items from location.`)}
-            className="px-3 py-1.5 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+            onClick={handleRemoveFromLocationClick}
+            className="px-3.5 py-1.5 rounded-xl border border-slate-400 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-xs"
           >
-            Remove from location
+            <span>Remove from location</span>
+            {selectedIds.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-white/15 text-[10px] font-bold">
+                {selectedIds.length}
+              </span>
+            )}
           </button>
+
           <button
             type="button"
-            onClick={handleBulkDeactivate}
-            className="px-3 py-1.5 rounded-lg border border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold transition-all cursor-pointer"
+            onClick={handleBulkDeactivateClick}
+            className="px-3.5 py-1.5 rounded-xl border border-amber-400 bg-amber-500/5 hover:bg-amber-500/15 text-amber-400 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-xs"
           >
-            Deactivate Selected
+            <span>Deactivate Selected</span>
+            {selectedIds.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[10px] font-bold">
+                {selectedIds.length}
+              </span>
+            )}
           </button>
-          <div title="Bulk actions apply to all checked items above" className="text-cyan-400 hover:text-cyan-300 cursor-pointer">
-            <Info size={15} />
+
+          {/* Tooltip (i) */}
+          <div className="relative group inline-flex items-center">
+            <button
+              type="button"
+              className="w-4 h-4 rounded-full bg-cyan-500 hover:bg-cyan-400 text-white flex items-center justify-center text-[10px] font-bold cursor-pointer transition-colors shadow-xs"
+              title="Bulk actions info"
+            >
+              i
+            </button>
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:flex flex-col items-center w-56 p-2 rounded-xl bg-[#0c0827] border border-white/20 text-[11px] text-slate-200 shadow-xl z-50 text-center pointer-events-none">
+              <span>Select checkboxes in the table to apply bulk actions to multiple products simultaneously.</span>
+              <div className="w-2 h-2 bg-[#0c0827] border-r border-b border-white/20 rotate-45 -mb-3 mt-1" />
+            </div>
           </div>
         </div>
 
-        {/* 6. Footer: Showing entries & Pagination */}
+        {/* 6. Footer: Showing entries & Pagination (matching media_1789381117002.png) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 text-xs text-slate-400">
           <div>
-            Showing {sortedProducts.length > 0 ? 1 : 0} to{' '}
-            {Math.min(entriesCount, sortedProducts.length)} of {sortedProducts.length} entries
+            Showing {startEntry} to {endEntry} of {sortedProducts.length} entries
           </div>
 
-          <div className="flex items-center gap-1.5 self-end sm:self-auto">
+          <div className="flex items-center gap-1 self-end sm:self-auto select-none">
             <button
               type="button"
-              disabled
-              className="px-3 py-1 rounded-lg bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed"
+              disabled={safeCurrentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className={`px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
+                safeCurrentPage <= 1
+                  ? 'bg-white/5 text-slate-600 border-white/5 cursor-not-allowed'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:text-white cursor-pointer'
+              }`}
             >
               Previous
             </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <button
+                key={pageNum}
+                type="button"
+                onClick={() => setCurrentPage(pageNum)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  safeCurrentPage === pageNum
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 hover:text-white'
+                }`}
+              >
+                {pageNum}
+              </button>
+            ))}
+
             <button
               type="button"
-              className="px-3 py-1 rounded-lg bg-violet-600 text-white font-bold shadow-xs cursor-pointer"
-            >
-              1
-            </button>
-            <button
-              type="button"
-              disabled
-              className="px-3 py-1 rounded-lg bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed"
+              disabled={safeCurrentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className={`px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
+                safeCurrentPage >= totalPages
+                  ? 'bg-white/5 text-slate-600 border-white/5 cursor-not-allowed'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:text-white cursor-pointer'
+              }`}
             >
               Next
             </button>
@@ -881,58 +1056,85 @@ export default function ProductsPage() {
 
       </div>
 
-      {/* Quick View Product Modal */}
-      {viewingProduct && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 overflow-y-auto bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg bg-[#0e0a2b] border border-white/15 rounded-2xl sm:rounded-3xl shadow-2xl p-6 text-xs text-slate-200 space-y-4 my-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-base font-bold text-white">{viewingProduct.name}</h3>
-              <button
-                type="button"
-                onClick={() => setViewingProduct(null)}
-                className="text-slate-400 hover:text-white cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="space-y-2 divide-y divide-white/10">
-              <div className="flex justify-between pt-2">
-                <span className="text-slate-400">SKU:</span>
-                <span className="font-mono text-cyan-300">{viewingProduct.sku}</span>
-              </div>
-              <div className="flex justify-between pt-2">
-                <span className="text-slate-400">Brand:</span>
-                <span>{viewingProduct.brand || '-'}</span>
-              </div>
-              <div className="flex justify-between pt-2">
-                <span className="text-slate-400">Location:</span>
-                <span>{viewingProduct.businessLocation}</span>
-              </div>
-              <div className="flex justify-between pt-2">
-                <span className="text-slate-400">Purchase Price:</span>
-                <span className="text-emerald-400 font-bold">৳ {viewingProduct.purchasePrice.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between pt-2">
-                <span className="text-slate-400">Selling Price:</span>
-                <span className="text-indigo-300 font-bold">৳ {viewingProduct.sellingPrice.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between pt-2">
-                <span className="text-slate-400">Current Stock:</span>
-                <span className="text-amber-400 font-bold">{viewingProduct.currentStock} {viewingProduct.unit}</span>
-              </div>
-            </div>
-            <div className="flex justify-end pt-3 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => setViewingProduct(null)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
+      {/* Floating Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[120] max-w-sm rounded-2xl bg-[#120e34] border border-white/15 p-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-5 duration-200 flex items-start gap-3 text-xs">
+          {toast.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          ) : toast.type === 'warning' ? (
+            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          ) : (
+            <Info className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1 text-slate-200 leading-relaxed font-medium">
+            {toast.message}
           </div>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+          >
+            ✕
+          </button>
         </div>
       )}
+
+      {/* View Product Details Modal (matching screenshot media_1789380389875.png) */}
+      <ViewProductModal
+        isOpen={!!viewingProduct}
+        onClose={() => setViewingProduct(null)}
+        product={viewingProduct}
+      />
+
+      {/* Single Delete Product Confirmation Modal */}
+      <DeleteProductModal
+        isOpen={!!deletingProduct}
+        product={deletingProduct}
+        onClose={() => setDeletingProduct(null)}
+        onConfirm={() => {
+          if (deletingProduct) {
+            setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id));
+            setSelectedIds((prev) => prev.filter((id) => id !== deletingProduct.id));
+            setDeletingProduct(null);
+            showToast(`Deleted product "${deletingProduct.name}".`, 'success');
+          }
+        }}
+      />
+
+      {/* Bulk Delete Modal */}
+      <BulkDeleteModal
+        isOpen={isBulkDeleteOpen}
+        selectedProducts={products.filter((p) => selectedIds.includes(p.id))}
+        onClose={() => setIsBulkDeleteOpen(false)}
+        onConfirm={confirmBulkDelete}
+      />
+
+      {/* Add To Location Modal */}
+      <AddToLocationModal
+        isOpen={isAddToLocationOpen}
+        selectedCount={selectedIds.length}
+        onClose={() => setIsAddToLocationOpen(false)}
+        onConfirm={confirmAddToLocation}
+      />
+
+      {/* Remove From Location Modal */}
+      <RemoveFromLocationModal
+        isOpen={isRemoveFromLocationOpen}
+        selectedCount={selectedIds.length}
+        onClose={() => setIsRemoveFromLocationOpen(false)}
+        onConfirm={confirmRemoveFromLocation}
+      />
+
+      {/* Bulk Deactivate Modal */}
+      <BulkDeactivateModal
+        isOpen={isBulkDeactivateOpen}
+        selectedCount={selectedIds.length}
+        hasActive={products
+          .filter((p) => selectedIds.includes(p.id))
+          .some((p) => p.status !== 'inactive')}
+        onClose={() => setIsBulkDeactivateOpen(false)}
+        onConfirm={confirmBulkDeactivate}
+      />
 
     </div>
   );

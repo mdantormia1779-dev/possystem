@@ -2,6 +2,10 @@
 import DashboardStats from "../Components/Dashboard/Homepage/DashboardStats";
 import DashboardBanner from "../Components/Dashboard/Homepage/DashboardBanner";
 import SalesLast30DaysChart from "../Components/Dashboard/Homepage/SalesLast30DaysChart";
+import SalesCurrentFinancialYearChart from "../Components/Dashboard/Homepage/SalesCurrentFinancialYearChart";
+import ProductStockAlert from "../Components/Dashboard/Homepage/ProductStockAlert";
+import SalesOrderTable from "../Components/Dashboard/Homepage/SalesOrderTable";
+import PendingShipments from "../Components/Dashboard/Homepage/PendingShipments";
 
 const Dashboard = () => {
   return (
@@ -9,6 +13,10 @@ const Dashboard = () => {
       <DashboardBanner />
       <DashboardStats />
       <SalesLast30DaysChart />
+      <SalesCurrentFinancialYearChart />
+      <ProductStockAlert />
+      <SalesOrderTable />
+      <PendingShipments />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Header from '../Components/Dashboard/Header';
@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         />
 
         {/* Dynamic Page Content with Responsive Padding */}
-        <main className="flex-1 overflow-y-auto p-3 xs:p-4 sm:p-6 lg:p-8 relative z-10 scrollbar-thin min-w-0 max-w-full overflow-x-hidden">
+        <main className="flex-1 overflow-y-auto p-3 xs:p-4 sm:p-6 lg:p-8 relative scrollbar-thin min-w-0 max-w-full overflow-x-hidden">
           {children}
         </main>
       </div>

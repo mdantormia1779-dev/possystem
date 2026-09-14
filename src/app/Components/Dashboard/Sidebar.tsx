@@ -93,11 +93,18 @@ const menuItems: MenuItem[] = [
     label: 'Sell', 
     icon: ArrowUpFromLine, 
     submenus: [
-      { id: 'all-sales', label: 'All Sales' },
-      { id: 'add-sale', label: 'Add Sale' },
-      { id: 'pos-list', label: 'POS Terminal' },
-      { id: 'drafts', label: 'Drafts' },
-      { id: 'quotations', label: 'Quotations' },
+      { id: 'all-sales', label: 'All sales', href: '/dashboard/sell' },
+      { id: 'add-sale', label: 'Add Sale', href: '/dashboard/sell/create' },
+      { id: 'list-pos', label: 'List POS' },
+      { id: 'pos', label: 'POS' },
+      { id: 'add-draft', label: 'Add Draft' },
+      { id: 'list-drafts', label: 'List Drafts' },
+      { id: 'add-quotation', label: 'Add Quotation' },
+      { id: 'list-quotations', label: 'List quotations' },
+      { id: 'list-sell-return', label: 'List Sell Return', href: '/dashboard/sell/return' },
+      { id: 'shipments', label: 'Shipments' },
+      { id: 'discounts', label: 'Discounts' },
+      { id: 'import-sales', label: 'Import Sales' },
     ] 
   },
   { 
@@ -200,6 +207,9 @@ export default function Sidebar({
     if (pathname?.startsWith('/dashboard/purchases')) {
       setExpandedItems((prev) => ({ ...prev, purchases: true }));
     }
+    if (pathname?.startsWith('/dashboard/sell')) {
+      setExpandedItems((prev) => ({ ...prev, sell: true }));
+    }
   }, [pathname]);
 
   const toggleSubmenu = (id: string) => {
@@ -283,6 +293,8 @@ export default function Sidebar({
             ? pathname?.startsWith('/dashboard/products')
             : item.id === 'purchases'
             ? pathname?.startsWith('/dashboard/purchases')
+            : item.id === 'sell'
+            ? pathname?.startsWith('/dashboard/sell')
             : activeItem === item.id;
 
           const itemClass = `w-full flex items-center justify-between px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 cursor-pointer ${

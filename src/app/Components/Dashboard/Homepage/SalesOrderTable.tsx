@@ -1,33 +1,69 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from 'react';
 import { 
   FiAlertCircle, 
-  FiFileText, 
-  FiPrinter, 
-  FiColumns, 
   FiChevronDown 
 } from 'react-icons/fi';
 import { 
-  BsFileEarmarkSpreadsheet, 
-  BsFileEarmarkPdf, 
   BsArrowDownUp 
 } from 'react-icons/bs';
+import ExportToolbar, { ColumnOption } from '../ExportToolbar';
+import { ColumnDef, exportToCSV, exportToExcel, exportToPDF, printTable } from '@/app/utils/tableExport';
 
-const tableHeaders = [
-  { id: 'action', label: 'Action', sortable: true },
-  { id: 'date', label: 'Date', sortable: true },
-  { id: 'orderNo', label: 'Order No.', sortable: true },
-  { id: 'customerName', label: 'Customer name', sortable: true },
-  { id: 'contactNumber', label: 'Contact Number', sortable: true },
-  { id: 'location', label: 'Location', sortable: true },
-  { id: 'status', label: 'Status', sortable: true },
-  { id: 'shippingStatus', label: 'Shipping Status', sortable: false },
-  { id: 'quantityRemaining', label: 'Quantity Remaining', sortable: false },
-];
+interface SalesOrderItem {
+  id?: string;
+  action?: string;
+  date?: string;
+  orderNo?: string;
+  customerName?: string;
+  contactNumber?: string;
+  location?: string;
+  status?: string;
+  shippingStatus?: string;
+  quantityRemaining?: string;
+}
 
 export default function SalesOrderTable() {
   const [entriesCount, setEntriesCount] = useState<number>(25);
+
+  const [columns, setColumns] = useState<ColumnOption[]>([
+    { id: 'action', label: 'Action', visible: true },
+    { id: 'date', label: 'Date', visible: true },
+    { id: 'orderNo', label: 'Order No.', visible: true },
+    { id: 'customerName', label: 'Customer name', visible: true },
+    { id: 'contactNumber', label: 'Contact Number', visible: true },
+    { id: 'location', label: 'Location', visible: true },
+    { id: 'status', label: 'Status', visible: true },
+    { id: 'shippingStatus', label: 'Shipping Status', visible: true },
+    { id: 'quantityRemaining', label: 'Quantity Remaining', visible: true },
+  ]);
+
+  const data: SalesOrderItem[] = [];
+
+  const handleToggleColumn = (id: string) => {
+    setColumns(prev => prev.map(c => c.id === id ? { ...c, visible: !c.visible } : c));
+  };
+
+  const isColVisible = (id: string) => Boolean(columns.find(c => c.id === id)?.visible);
+
+  const exportColumns: ColumnDef<SalesOrderItem>[] = [
+    { id: 'date', label: 'Date', accessor: (item: SalesOrderItem) => item.date || '' },
+    { id: 'orderNo', label: 'Order No.', accessor: (item: SalesOrderItem) => item.orderNo || '' },
+    { id: 'customerName', label: 'Customer name', accessor: (item: SalesOrderItem) => item.customerName || '' },
+    { id: 'contactNumber', label: 'Contact Number', accessor: (item: SalesOrderItem) => item.contactNumber || '' },
+    { id: 'location', label: 'Location', accessor: (item: SalesOrderItem) => item.location || '' },
+    { id: 'status', label: 'Status', accessor: (item: SalesOrderItem) => item.status || '' },
+    { id: 'shippingStatus', label: 'Shipping Status', accessor: (item: SalesOrderItem) => item.shippingStatus || '' },
+    { id: 'quantityRemaining', label: 'Quantity Remaining', accessor: (item: SalesOrderItem) => item.quantityRemaining || '' },
+  ].filter(c => isColVisible(c.id));
+
+  const handleExportCSV = () => exportToCSV('sales_orders', exportColumns, data);
+  const handleExportExcel = () => exportToExcel('sales_orders', exportColumns, data);
+  const handlePrint = () => printTable('Sales Orders', exportColumns, data);
+  const handleExportPDF = () => exportToPDF('Sales Orders', exportColumns, data);
+
+  const visibleColumns = columns.filter(c => c.visible);
 
   return (
     <div className="relative w-full rounded-2xl sm:rounded-3xl bg-[#120e34]/85 hover:bg-[#161242]/90 border border-white/10 hover:border-indigo-500/30 p-4 sm:p-6 lg:p-7 shadow-2xl backdrop-blur-xl select-none overflow-hidden font-sans transition-all duration-300 mt-6">
@@ -74,47 +110,14 @@ export default function SalesOrderTable() {
         </div>
 
         {/* Export Toolbar Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            <FiFileText className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Export CSV</span>
-          </button>
-
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            <BsFileEarmarkSpreadsheet className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Export Excel</span>
-          </button>
-
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            <FiPrinter className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Print</span>
-          </button>
-
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            <FiColumns className="w-3.5 h-3.5 text-purple-400" />
-            <span>Column visibility</span>
-          </button>
-
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            <BsFileEarmarkPdf className="w-3.5 h-3.5 text-rose-400" />
-            <span>Export PDF</span>
-          </button>
-        </div>
+        <ExportToolbar
+          columns={columns}
+          onToggleColumn={handleToggleColumn}
+          onExportCSV={handleExportCSV}
+          onExportExcel={handleExportExcel}
+          onPrint={handlePrint}
+          onExportPDF={handleExportPDF}
+        />
       </div>
 
       {/* Table Section with Responsive Horizontal Scroll */}
@@ -122,11 +125,11 @@ export default function SalesOrderTable() {
         <table className="w-full text-left border-collapse text-xs min-w-[750px]">
           <thead>
             <tr className="bg-white/[0.04] text-indigo-200/80 uppercase tracking-wider text-[11px] font-bold border-b border-white/10">
-              {tableHeaders.map((header) => (
+              {visibleColumns.map((header) => (
                 <th key={header.id} className="py-3 px-3.5 whitespace-nowrap">
                   <div className="flex items-center gap-1.5">
                     <span>{header.label}</span>
-                    {header.sortable && (
+                    {header.id !== 'action' && (
                       <BsArrowDownUp className="w-2.5 h-2.5 text-slate-500 opacity-70" />
                     )}
                   </div>
@@ -136,8 +139,8 @@ export default function SalesOrderTable() {
           </thead>
           <tbody className="divide-y divide-white/[0.06] text-slate-300">
             <tr>
-              <td colSpan={tableHeaders.length} className="py-8 text-center text-slate-400 text-xs font-medium">
-                No data available in table
+              <td colSpan={visibleColumns.length || 1} className="py-8 text-center text-slate-400 text-xs font-medium">
+                {visibleColumns.length === 0 ? 'No columns visible' : 'No data available in table'}
               </td>
             </tr>
           </tbody>

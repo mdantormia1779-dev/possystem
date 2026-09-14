@@ -3,17 +3,12 @@
 import React, { useState } from 'react';
 import { 
   FiPlus, 
-  FiFileText, 
-  FiPrinter, 
-  FiColumns, 
   FiChevronDown 
 } from 'react-icons/fi';
-import { 
-  BsFileEarmarkSpreadsheet, 
-  BsFileEarmarkPdf, 
-  BsArrowDownUp 
-} from 'react-icons/bs';
+import { BsArrowDownUp } from 'react-icons/bs';
 import AddSalesCommissionAgentModal, { AgentFormData } from './AddSalesCommissionAgentModal';
+import ExportToolbar, { ColumnOption } from '@/app/Components/Dashboard/ExportToolbar';
+import { exportToCSV, exportToExcel, printTable, exportToPDF } from '@/app/utils/tableExport';
 
 interface AgentItem {
   id: string;
@@ -24,20 +19,29 @@ interface AgentItem {
   commissionPercentage: string;
 }
 
-const tableHeaders = [
-  { id: 'name', label: 'Name', sortable: true },
-  { id: 'email', label: 'Email', sortable: true },
-  { id: 'contactNumber', label: 'Contact Number', sortable: false },
-  { id: 'address', label: 'Address', sortable: true },
-  { id: 'commissionPercentage', label: 'Sales Commission Percentage (%)', sortable: true },
-  { id: 'action', label: 'Action', sortable: true },
-];
-
 export default function SalesCommissionAgentsPage() {
   const [agents, setAgents] = useState<AgentItem[]>([]);
   const [entriesCount, setEntriesCount] = useState<number>(25);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  // Column Visibility State
+  const [columns, setColumns] = useState<ColumnOption[]>([
+    { id: 'name', label: 'Name', visible: true },
+    { id: 'email', label: 'Email', visible: true },
+    { id: 'contactNumber', label: 'Contact Number', visible: true },
+    { id: 'address', label: 'Address', visible: true },
+    { id: 'commissionPercentage', label: 'Sales Commission Percentage (%)', visible: true },
+    { id: 'action', label: 'Action', visible: true },
+  ]);
+
+  const toggleColumn = (id: string) => {
+    setColumns((prev) =>
+      prev.map((col) => (col.id === id ? { ...col, visible: !col.visible } : col))
+    );
+  };
+
+  const isColVisible = (id: string) => Boolean(columns.find((c) => c.id === id)?.visible);
 
   const handleSaveAgent = (data: AgentFormData) => {
     const newAgent: AgentItem = {
@@ -56,6 +60,33 @@ export default function SalesCommissionAgentsPage() {
     agent.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     agent.contactNumber.includes(searchQuery)
   );
+
+  // Export Columns (excluding Action, filtered by visibility)
+  const exportColumns = [
+    { id: 'name', label: 'Name', accessor: (item: AgentItem) => item.name },
+    { id: 'email', label: 'Email', accessor: (item: AgentItem) => item.email },
+    { id: 'contactNumber', label: 'Contact Number', accessor: (item: AgentItem) => item.contactNumber },
+    { id: 'address', label: 'Address', accessor: (item: AgentItem) => item.address },
+    { id: 'commissionPercentage', label: 'Commission (%)', accessor: (item: AgentItem) => `${item.commissionPercentage}%` },
+  ].filter((c) => isColVisible(c.id));
+
+  const handleExportCSV = () => {
+    exportToCSV('Sales_Commission_Agents', exportColumns, filteredAgents);
+  };
+
+  const handleExportExcel = () => {
+    exportToExcel('Sales_Commission_Agents', exportColumns, filteredAgents);
+  };
+
+  const handlePrint = () => {
+    printTable('Sales Commission Agents', exportColumns, filteredAgents);
+  };
+
+  const handleExportPDF = () => {
+    exportToPDF('Sales Commission Agents', exportColumns, filteredAgents);
+  };
+
+  const visibleColCount = columns.filter((c) => c.visible).length;
 
   return (
     <div className="w-full font-sans select-none flex flex-col justify-between min-h-[calc(100vh-8rem)] text-slate-200">
@@ -109,48 +140,15 @@ export default function SalesCommissionAgentsPage() {
                 <span>entries</span>
               </div>
 
-              {/* Export Toolbar */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                >
-                  <FiFileText className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Export CSV</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                >
-                  <BsFileEarmarkSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Export Excel</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                >
-                  <FiPrinter className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Print</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                >
-                  <FiColumns className="w-3.5 h-3.5 text-slate-300" />
-                  <span>Column visibility</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                >
-                  <BsFileEarmarkPdf className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Export PDF</span>
-                </button>
-              </div>
+              {/* Working Export Toolbar */}
+              <ExportToolbar
+                columns={columns}
+                onToggleColumn={toggleColumn}
+                onExportCSV={handleExportCSV}
+                onExportExcel={handleExportExcel}
+                onPrint={handlePrint}
+                onExportPDF={handleExportPDF}
+              />
             </div>
 
             {/* Search Box */}
@@ -170,41 +168,82 @@ export default function SalesCommissionAgentsPage() {
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.03]">
-                  {tableHeaders.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10 last:border-r-0 whitespace-nowrap"
-                    >
+                  {isColVisible('name') && (
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10 whitespace-nowrap">
                       <div className="flex items-center justify-between gap-2">
-                        <span>{header.label}</span>
-                        {header.sortable && (
-                          <BsArrowDownUp className="w-3 h-3 text-slate-400 shrink-0" />
-                        )}
+                        <span>Name</span>
+                        <BsArrowDownUp className="w-3 h-3 text-slate-400 shrink-0" />
                       </div>
                     </th>
-                  ))}
+                  )}
+                  {isColVisible('email') && (
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10 whitespace-nowrap">
+                      <div className="flex items-center justify-between gap-2">
+                        <span>Email</span>
+                        <BsArrowDownUp className="w-3 h-3 text-slate-400 shrink-0" />
+                      </div>
+                    </th>
+                  )}
+                  {isColVisible('contactNumber') && (
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10 whitespace-nowrap">
+                      <span>Contact Number</span>
+                    </th>
+                  )}
+                  {isColVisible('address') && (
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10 whitespace-nowrap">
+                      <div className="flex items-center justify-between gap-2">
+                        <span>Address</span>
+                        <BsArrowDownUp className="w-3 h-3 text-slate-400 shrink-0" />
+                      </div>
+                    </th>
+                  )}
+                  {isColVisible('commissionPercentage') && (
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10 whitespace-nowrap">
+                      <div className="flex items-center justify-between gap-2">
+                        <span>Sales Commission Percentage (%)</span>
+                        <BsArrowDownUp className="w-3 h-3 text-slate-400 shrink-0" />
+                      </div>
+                    </th>
+                  )}
+                  {isColVisible('action') && (
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-300 whitespace-nowrap">
+                      Action
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {filteredAgents.length > 0 ? (
                   filteredAgents.map((agent) => (
                     <tr key={agent.id} className="hover:bg-white/[0.03] text-xs text-slate-300 transition-colors">
-                      <td className="px-4 py-3 border-r border-white/10 font-medium text-white">{agent.name}</td>
-                      <td className="px-4 py-3 border-r border-white/10">{agent.email}</td>
-                      <td className="px-4 py-3 border-r border-white/10">{agent.contactNumber}</td>
-                      <td className="px-4 py-3 border-r border-white/10">{agent.address}</td>
-                      <td className="px-4 py-3 border-r border-white/10">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-                          {agent.commissionPercentage}%
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-400">--</td>
+                      {isColVisible('name') && (
+                        <td className="px-4 py-3 border-r border-white/10 font-medium text-white">{agent.name}</td>
+                      )}
+                      {isColVisible('email') && (
+                        <td className="px-4 py-3 border-r border-white/10">{agent.email}</td>
+                      )}
+                      {isColVisible('contactNumber') && (
+                        <td className="px-4 py-3 border-r border-white/10">{agent.contactNumber}</td>
+                      )}
+                      {isColVisible('address') && (
+                        <td className="px-4 py-3 border-r border-white/10">{agent.address}</td>
+                      )}
+                      {isColVisible('commissionPercentage') && (
+                        <td className="px-4 py-3 border-r border-white/10">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                            {agent.commissionPercentage}%
+                          </span>
+                        </td>
+                      )}
+                      {isColVisible('action') && (
+                        <td className="px-4 py-3 text-slate-400">--</td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td
-                      colSpan={tableHeaders.length}
+                      colSpan={visibleColCount || 6}
                       className="text-center py-8 text-xs sm:text-sm text-slate-400 font-medium"
                     >
                       No data available in table

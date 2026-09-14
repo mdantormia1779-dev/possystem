@@ -1,32 +1,65 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from 'react';
 import { 
   Truck, 
-  FileSpreadsheet, 
-  Printer, 
-  Columns, 
-  FileText, 
   ArrowUpDown,
   ChevronDown
 } from 'lucide-react';
+import ExportToolbar, { ColumnOption } from '../ExportToolbar';
+import { ColumnDef, exportToCSV, exportToExcel, exportToPDF, printTable } from '@/app/utils/tableExport';
+
+interface ShipmentItem {
+  id?: string;
+  action?: string;
+  date?: string;
+  invoiceNo?: string;
+  customerName?: string;
+  contactNumber?: string;
+  location?: string;
+  shippingStatus?: string;
+  paymentStatus?: string;
+}
 
 export default function PendingShipments() {
   const [entriesPerPage, setEntriesPerPage] = useState('25');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const columns = [
-    { label: 'Action', sortable: false },
-    { label: 'Date', sortable: true },
-    { label: 'Invoice No.', sortable: true },
-    { label: 'Customer name', sortable: true },
-    { label: 'Contact Number', sortable: true },
-    { label: 'Location', sortable: true },
-    { label: 'Shipping Status', sortable: true },
-    { label: 'Payment Status', sortable: true },
-  ];
+  const [columns, setColumns] = useState<ColumnOption[]>([
+    { id: 'action', label: 'Action', visible: true },
+    { id: 'date', label: 'Date', visible: true },
+    { id: 'invoiceNo', label: 'Invoice No.', visible: true },
+    { id: 'customerName', label: 'Customer name', visible: true },
+    { id: 'contactNumber', label: 'Contact Number', visible: true },
+    { id: 'location', label: 'Location', visible: true },
+    { id: 'shippingStatus', label: 'Shipping Status', visible: true },
+    { id: 'paymentStatus', label: 'Payment Status', visible: true },
+  ]);
 
-  const data: any[] = [];
+  const data: ShipmentItem[] = [];
+
+  const handleToggleColumn = (id: string) => {
+    setColumns(prev => prev.map(c => c.id === id ? { ...c, visible: !c.visible } : c));
+  };
+
+  const isColVisible = (id: string) => Boolean(columns.find(c => c.id === id)?.visible);
+
+  const exportColumns: ColumnDef<ShipmentItem>[] = [
+    { id: 'date', label: 'Date', accessor: (item: ShipmentItem) => item.date || '' },
+    { id: 'invoiceNo', label: 'Invoice No.', accessor: (item: ShipmentItem) => item.invoiceNo || '' },
+    { id: 'customerName', label: 'Customer name', accessor: (item: ShipmentItem) => item.customerName || '' },
+    { id: 'contactNumber', label: 'Contact Number', accessor: (item: ShipmentItem) => item.contactNumber || '' },
+    { id: 'location', label: 'Location', accessor: (item: ShipmentItem) => item.location || '' },
+    { id: 'shippingStatus', label: 'Shipping Status', accessor: (item: ShipmentItem) => item.shippingStatus || '' },
+    { id: 'paymentStatus', label: 'Payment Status', accessor: (item: ShipmentItem) => item.paymentStatus || '' },
+  ].filter(c => isColVisible(c.id));
+
+  const handleExportCSV = () => exportToCSV('pending_shipments', exportColumns, data);
+  const handleExportExcel = () => exportToExcel('pending_shipments', exportColumns, data);
+  const handlePrint = () => printTable('Pending Shipments', exportColumns, data);
+  const handleExportPDF = () => exportToPDF('Pending Shipments', exportColumns, data);
+
+  const visibleColumns = columns.filter(c => c.visible);
 
   return (
     <div className="relative w-full rounded-2xl sm:rounded-3xl bg-[#120e34]/85 hover:bg-[#161242]/90 border border-white/10 hover:border-orange-500/30 p-4 sm:p-6 lg:p-7 shadow-2xl backdrop-blur-xl select-none overflow-hidden font-sans transition-all duration-300 mt-6">
@@ -74,47 +107,14 @@ export default function PendingShipments() {
           </div>
 
           {/* Action / Export Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button 
-              type="button" 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-            >
-              <FileSpreadsheet size={13} className="text-emerald-400" />
-              <span>Export CSV</span>
-            </button>
-
-            <button 
-              type="button" 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-            >
-              <FileSpreadsheet size={13} className="text-cyan-400" />
-              <span>Export Excel</span>
-            </button>
-
-            <button 
-              type="button" 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-            >
-              <Printer size={13} className="text-indigo-400" />
-              <span>Print</span>
-            </button>
-
-            <button 
-              type="button" 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-            >
-              <Columns size={13} className="text-purple-400" />
-              <span>Column visibility</span>
-            </button>
-
-            <button 
-              type="button" 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-            >
-              <FileText size={13} className="text-rose-400" />
-              <span>Export PDF</span>
-            </button>
-          </div>
+          <ExportToolbar
+            columns={columns}
+            onToggleColumn={handleToggleColumn}
+            onExportCSV={handleExportCSV}
+            onExportExcel={handleExportExcel}
+            onPrint={handlePrint}
+            onExportPDF={handleExportPDF}
+          />
         </div>
 
         {/* Search Box */}
@@ -134,11 +134,11 @@ export default function PendingShipments() {
         <table className="w-full text-left border-collapse text-xs min-w-[750px]">
           <thead>
             <tr className="bg-white/[0.04] text-indigo-200/80 uppercase tracking-wider text-[11px] font-bold border-b border-white/10">
-              {columns.map((col, index) => (
-                <th key={index} className="py-3 px-3.5 whitespace-nowrap">
+              {visibleColumns.map((col) => (
+                <th key={col.id} className="py-3 px-3.5 whitespace-nowrap">
                   <div className="flex items-center gap-1.5">
                     <span>{col.label}</span>
-                    {col.sortable && (
+                    {col.id !== 'action' && (
                       <ArrowUpDown size={11} className="text-slate-500 opacity-70" />
                     )}
                   </div>
@@ -148,8 +148,8 @@ export default function PendingShipments() {
           </thead>
           <tbody className="divide-y divide-white/[0.06] text-slate-300">
             <tr>
-              <td colSpan={columns.length} className="py-8 text-center text-slate-400 text-xs font-medium">
-                No data available in table
+              <td colSpan={visibleColumns.length || 1} className="py-8 text-center text-slate-400 text-xs font-medium">
+                {visibleColumns.length === 0 ? 'No columns visible' : 'No data available in table'}
               </td>
             </tr>
           </tbody>

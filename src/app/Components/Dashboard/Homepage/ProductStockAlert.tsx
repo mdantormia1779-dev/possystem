@@ -1,21 +1,50 @@
-﻿import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import { 
   AlertCircle, 
-  Info, 
-  FileSpreadsheet, 
-  Printer, 
-  Columns, 
-  FileText 
+  Info
 } from 'lucide-react';
+import ExportToolbar, { ColumnOption } from '../ExportToolbar';
+import { ColumnDef, exportToCSV, exportToExcel, exportToPDF, printTable } from '@/app/utils/tableExport';
+
+interface StockAlertItem {
+  id: number;
+  product: string;
+  location: string;
+}
 
 const ProductStockAlert = () => {
-  const tableData = [
+  const [columns, setColumns] = useState<ColumnOption[]>([
+    { id: 'product', label: 'Product', visible: true },
+    { id: 'location', label: 'Location', visible: true },
+  ]);
+
+  const tableData: StockAlertItem[] = [
     {
       id: 1,
       product: 'WD 40D (0001)',
       location: 'RANGPUR BIKE PARLOUR',
     },
   ];
+
+  const handleToggleColumn = (id: string) => {
+    setColumns(prev => prev.map(c => c.id === id ? { ...c, visible: !c.visible } : c));
+  };
+
+  const isColVisible = (id: string) => Boolean(columns.find(c => c.id === id)?.visible);
+
+  const exportColumns: ColumnDef<StockAlertItem>[] = [
+    { id: 'product', label: 'Product', accessor: (item: StockAlertItem) => item.product },
+    { id: 'location', label: 'Location', accessor: (item: StockAlertItem) => item.location },
+  ].filter(c => isColVisible(c.id));
+
+  const handleExportCSV = () => exportToCSV('product_stock_alert', exportColumns, tableData);
+  const handleExportExcel = () => exportToExcel('product_stock_alert', exportColumns, tableData);
+  const handlePrint = () => printTable('Product Stock Alert', exportColumns, tableData);
+  const handleExportPDF = () => exportToPDF('Product Stock Alert', exportColumns, tableData);
+
+  const visibleColCount = columns.filter(c => c.visible).length;
 
   return (
     <div className="relative w-full rounded-2xl sm:rounded-3xl bg-[#120e34]/85 hover:bg-[#161242]/90 border border-white/10 hover:border-amber-500/30 p-4 sm:p-6 lg:p-7 shadow-2xl backdrop-blur-xl select-none overflow-hidden font-sans transition-all duration-300 mt-6">
@@ -52,46 +81,15 @@ const ProductStockAlert = () => {
       </div>
 
       {/* Action / Export Buttons Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <button 
-          type="button" 
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all active:scale-95 cursor-pointer shadow-xs"
-        >
-          <FileSpreadsheet size={13} className="text-emerald-400" />
-          <span>Export CSV</span>
-        </button>
-
-        <button 
-          type="button" 
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all active:scale-95 cursor-pointer shadow-xs"
-        >
-          <FileSpreadsheet size={13} className="text-cyan-400" />
-          <span>Export Excel</span>
-        </button>
-
-        <button 
-          type="button" 
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all active:scale-95 cursor-pointer shadow-xs"
-        >
-          <Printer size={13} className="text-indigo-400" />
-          <span>Print</span>
-        </button>
-
-        <button 
-          type="button" 
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all active:scale-95 cursor-pointer shadow-xs"
-        >
-          <Columns size={13} className="text-purple-400" />
-          <span>Column visibility</span>
-        </button>
-
-        <button 
-          type="button" 
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all active:scale-95 cursor-pointer shadow-xs"
-        >
-          <FileText size={13} className="text-rose-400" />
-          <span>Export PDF</span>
-        </button>
+      <div className="mb-4">
+        <ExportToolbar
+          columns={columns}
+          onToggleColumn={handleToggleColumn}
+          onExportCSV={handleExportCSV}
+          onExportExcel={handleExportExcel}
+          onPrint={handlePrint}
+          onExportPDF={handleExportPDF}
+        />
       </div>
 
       {/* Table Section */}
@@ -99,25 +97,37 @@ const ProductStockAlert = () => {
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-white/[0.04] text-indigo-200/80 uppercase tracking-wider text-[11px] font-bold border-b border-white/10">
-              <th className="py-3 px-4 sm:px-6 w-1/2">
-                Product
-              </th>
-              <th className="py-3 px-4 sm:px-6 w-1/2">
-                Location
-              </th>
+              {isColVisible('product') && (
+                <th className="py-3 px-4 sm:px-6 w-1/2">Product</th>
+              )}
+              {isColVisible('location') && (
+                <th className="py-3 px-4 sm:px-6 w-1/2">Location</th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.06] text-slate-300">
-            {tableData.map((row) => (
-              <tr key={row.id} className="hover:bg-white/[0.04] transition-colors">
-                <td className="py-3.5 px-4 sm:px-6 font-semibold text-white">
-                  {row.product}
-                </td>
-                <td className="py-3.5 px-4 sm:px-6 text-slate-300 font-medium uppercase">
-                  {row.location}
+            {tableData.length === 0 || visibleColCount === 0 ? (
+              <tr>
+                <td colSpan={visibleColCount || 1} className="py-6 text-center text-slate-400">
+                  {visibleColCount === 0 ? 'No columns visible' : 'No alerts found'}
                 </td>
               </tr>
-            ))}
+            ) : (
+              tableData.map((row) => (
+                <tr key={row.id} className="hover:bg-white/[0.04] transition-colors">
+                  {isColVisible('product') && (
+                    <td className="py-3.5 px-4 sm:px-6 font-semibold text-white">
+                      {row.product}
+                    </td>
+                  )}
+                  {isColVisible('location') && (
+                    <td className="py-3.5 px-4 sm:px-6 text-slate-300 font-medium uppercase">
+                      {row.location}
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

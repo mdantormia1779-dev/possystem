@@ -7,23 +7,18 @@ import {
   FiArrowLeft, 
   FiEdit, 
   FiPlus, 
-  FiFileText, 
-  FiPrinter, 
-  FiColumns, 
   FiChevronDown, 
   FiTrash2 
 } from 'react-icons/fi';
-import { 
-  BsFileEarmarkSpreadsheet, 
-  BsFileEarmarkPdf, 
-  BsArrowDownUp 
-} from 'react-icons/bs';
+import { BsArrowDownUp } from 'react-icons/bs';
 import { 
   FaUser, 
   FaPaperclip, 
   FaListAlt 
 } from 'react-icons/fa';
 import AddNoteModal, { NoteItem } from './AddNoteModal';
+import ExportToolbar, { ColumnOption } from '@/app/Components/Dashboard/ExportToolbar';
+import { exportToCSV, exportToExcel, printTable, exportToPDF } from '@/app/utils/tableExport';
 
 interface ActivityItem {
   id: string;
@@ -62,6 +57,23 @@ export default function ViewUserPage() {
   const [entriesCount, setEntriesCount] = useState<number>(25);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Documents & Notes Column Visibility
+  const [docColumns, setDocColumns] = useState<ColumnOption[]>([
+    { id: 'action', label: 'Action', visible: true },
+    { id: 'heading', label: 'Heading', visible: true },
+    { id: 'addedBy', label: 'Added By', visible: true },
+    { id: 'createdAt', label: 'Created At', visible: true },
+    { id: 'updatedAt', label: 'Updated At', visible: true },
+  ]);
+
+  const toggleDocColumn = (id: string) => {
+    setDocColumns((prev) =>
+      prev.map((col) => (col.id === id ? { ...col, visible: !col.visible } : col))
+    );
+  };
+
+  const isDocColVisible = (id: string) => Boolean(docColumns.find((c) => c.id === id)?.visible);
+
   const handleSaveNote = (newNoteData: Omit<NoteItem, 'id' | 'createdAt' | 'updatedAt' | 'addedBy'>) => {
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
@@ -88,6 +100,32 @@ export default function ViewUserPage() {
     n.heading.toLowerCase().includes(searchQuery.toLowerCase()) ||
     n.addedBy.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Export Columns (excluding Action, filtered by visibility)
+  const exportDocColumns = [
+    { id: 'heading', label: 'Heading', accessor: (item: NoteItem) => item.heading },
+    { id: 'addedBy', label: 'Added By', accessor: (item: NoteItem) => item.addedBy },
+    { id: 'createdAt', label: 'Created At', accessor: (item: NoteItem) => item.createdAt },
+    { id: 'updatedAt', label: 'Updated At', accessor: (item: NoteItem) => item.updatedAt },
+  ].filter((c) => isDocColVisible(c.id));
+
+  const handleExportDocCSV = () => {
+    exportToCSV('User_Documents_And_Notes', exportDocColumns, filteredNotes);
+  };
+
+  const handleExportDocExcel = () => {
+    exportToExcel('User_Documents_And_Notes', exportDocColumns, filteredNotes);
+  };
+
+  const handlePrintDoc = () => {
+    printTable('User Documents & Notes', exportDocColumns, filteredNotes);
+  };
+
+  const handleExportDocPDF = () => {
+    exportToPDF('User Documents & Notes', exportDocColumns, filteredNotes);
+  };
+
+  const visibleDocColCount = docColumns.filter((c) => c.visible).length;
 
   return (
     <div className="w-full font-sans select-none flex flex-col justify-between min-h-[calc(100vh-8rem)] text-slate-200">
@@ -307,7 +345,7 @@ export default function ViewUserPage() {
                   </button>
                 </div>
 
-                {/* Control Bar: Entries, Export Buttons & Search */}
+                {/* Control Bar: Entries, Working Export Toolbar & Search */}
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex flex-wrap items-center gap-3">
                     {/* Show Entries Selector */}
@@ -329,48 +367,15 @@ export default function ViewUserPage() {
                       <span>entries</span>
                     </div>
 
-                    {/* Export Toolbar */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                      >
-                        <FiFileText className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>Export CSV</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                      >
-                        <BsFileEarmarkSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Export Excel</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                      >
-                        <FiPrinter className="w-3.5 h-3.5 text-indigo-400" />
-                        <span>Print</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                      >
-                        <FiColumns className="w-3.5 h-3.5 text-slate-300" />
-                        <span>Column visibility</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[11px] sm:text-xs font-medium text-slate-200 transition-colors shadow-2xs cursor-pointer"
-                      >
-                        <BsFileEarmarkPdf className="w-3.5 h-3.5 text-rose-400" />
-                        <span>Export PDF</span>
-                      </button>
-                    </div>
+                    {/* Fully Functional Export Toolbar */}
+                    <ExportToolbar
+                      columns={docColumns}
+                      onToggleColumn={toggleDocColumn}
+                      onExportCSV={handleExportDocCSV}
+                      onExportExcel={handleExportDocExcel}
+                      onPrint={handlePrintDoc}
+                      onExportPDF={handleExportDocPDF}
+                    />
                   </div>
 
                   {/* Search Input */}
@@ -390,75 +395,95 @@ export default function ViewUserPage() {
                   <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
                       <tr className="border-b border-white/10 bg-white/[0.03]">
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10">
-                          Action
-                        </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10">
-                          <div className="flex items-center justify-between">
-                            <span>Heading</span>
-                            <BsArrowDownUp className="w-3 h-3 text-slate-400" />
-                          </div>
-                        </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10">
-                          <div className="flex items-center justify-between">
-                            <span>Added By</span>
-                            <BsArrowDownUp className="w-3 h-3 text-slate-400" />
-                          </div>
-                        </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10">
-                          Created At
-                        </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-slate-300">
-                          <div className="flex items-center justify-between">
-                            <span>Updated At</span>
-                            <BsArrowDownUp className="w-3 h-3 text-slate-400" />
-                          </div>
-                        </th>
+                        {isDocColVisible('action') && (
+                          <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10">
+                            Action
+                          </th>
+                        )}
+                        {isDocColVisible('heading') && (
+                          <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10">
+                            <div className="flex items-center justify-between">
+                              <span>Heading</span>
+                              <BsArrowDownUp className="w-3 h-3 text-slate-400" />
+                            </div>
+                          </th>
+                        )}
+                        {isDocColVisible('addedBy') && (
+                          <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10">
+                            <div className="flex items-center justify-between">
+                              <span>Added By</span>
+                              <BsArrowDownUp className="w-3 h-3 text-slate-400" />
+                            </div>
+                          </th>
+                        )}
+                        {isDocColVisible('createdAt') && (
+                          <th className="px-4 py-3 text-xs font-semibold text-slate-300 border-r border-white/10">
+                            Created At
+                          </th>
+                        )}
+                        {isDocColVisible('updatedAt') && (
+                          <th className="px-4 py-3 text-xs font-semibold text-slate-300">
+                            <div className="flex items-center justify-between">
+                              <span>Updated At</span>
+                              <BsArrowDownUp className="w-3 h-3 text-slate-400" />
+                            </div>
+                          </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-xs text-slate-300">
                       {filteredNotes.length > 0 ? (
                         filteredNotes.map((note) => (
                           <tr key={note.id} className="hover:bg-white/[0.03] transition-colors">
-                            <td className="px-4 py-3 border-r border-white/10">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteNote(note.id)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium transition-colors cursor-pointer"
-                              >
-                                <FiTrash2 className="w-3 h-3" />
-                                <span>Delete</span>
-                              </button>
-                            </td>
-                            <td className="px-4 py-3 border-r border-white/10 font-medium text-white">
-                              <div>
-                                <p>{note.heading}</p>
-                                {note.description && (
-                                  <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
-                                    {note.description}
-                                  </p>
-                                )}
-                                {note.fileName && (
-                                  <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] bg-indigo-500/20 text-cyan-300 border border-indigo-500/30">
-                                    📎 {note.fileName}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 border-r border-white/10">
-                              {note.addedBy}
-                            </td>
-                            <td className="px-4 py-3 border-r border-white/10 text-slate-400">
-                              {note.createdAt}
-                            </td>
-                            <td className="px-4 py-3 text-slate-400">
-                              {note.updatedAt}
-                            </td>
+                            {isDocColVisible('action') && (
+                              <td className="px-4 py-3 border-r border-white/10">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteNote(note.id)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium transition-colors cursor-pointer"
+                                >
+                                  <FiTrash2 className="w-3 h-3" />
+                                  <span>Delete</span>
+                                </button>
+                              </td>
+                            )}
+                            {isDocColVisible('heading') && (
+                              <td className="px-4 py-3 border-r border-white/10 font-medium text-white">
+                                <div>
+                                  <p>{note.heading}</p>
+                                  {note.description && (
+                                    <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                                      {note.description}
+                                    </p>
+                                  )}
+                                  {note.fileName && (
+                                    <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] bg-indigo-500/20 text-cyan-300 border border-indigo-500/30">
+                                      📎 {note.fileName}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                            )}
+                            {isDocColVisible('addedBy') && (
+                              <td className="px-4 py-3 border-r border-white/10">
+                                {note.addedBy}
+                              </td>
+                            )}
+                            {isDocColVisible('createdAt') && (
+                              <td className="px-4 py-3 border-r border-white/10 text-slate-400">
+                                {note.createdAt}
+                              </td>
+                            )}
+                            {isDocColVisible('updatedAt') && (
+                              <td className="px-4 py-3 text-slate-400">
+                                {note.updatedAt}
+                              </td>
+                            )}
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={5} className="text-center py-8 text-xs text-slate-400">
+                          <td colSpan={visibleDocColCount || 5} className="text-center py-8 text-xs text-slate-400">
                             No data available in table
                           </td>
                         </tr>

@@ -53,7 +53,7 @@ const menuItems: MenuItem[] = [
     label: 'Contacts', 
     icon: BookUser, 
     submenus: [
-      { id: 'suppliers', label: 'Suppliers' },
+      { id: 'suppliers', label: 'Suppliers', href: '/dashboard/suppliers' },
       { id: 'customers', label: 'Customers' },
       { id: 'customer-groups', label: 'Customer Groups' },
     ] 
@@ -179,6 +179,9 @@ export default function Sidebar({
     ) {
       setExpandedItems((prev) => ({ ...prev, 'user-management': true }));
     }
+    if (pathname?.startsWith('/dashboard/suppliers')) {
+      setExpandedItems((prev) => ({ ...prev, contacts: true }));
+    }
   }, [pathname]);
 
   const toggleSubmenu = (id: string) => {
@@ -253,6 +256,8 @@ export default function Sidebar({
             ? pathname?.startsWith('/dashboard/users') ||
               pathname?.startsWith('/dashboard/rules') ||
               pathname?.startsWith('/dashboard/sales-commission-agents')
+            : item.id === 'contacts'
+            ? pathname?.startsWith('/dashboard/suppliers')
             : activeItem === item.id;
 
           const itemClass = `w-full flex items-center justify-between px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 cursor-pointer ${

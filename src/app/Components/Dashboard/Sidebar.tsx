@@ -18,7 +18,7 @@ import {
   ChevronLeft,
   ChevronDown,
   X,
-  ShieldCheck
+  Sparkles
 } from 'lucide-react';
 
 interface SubmenuItem {
@@ -150,15 +150,14 @@ const menuItems: MenuItem[] = [
 ];
 
 interface SidebarProps {
-  sidebarOpen: boolean;
-  mobileMenuOpen: boolean;
-  onCloseMobileMenu: () => void;
+  isMobile?: boolean;
+  onCloseMobileMenu?: () => void;
   activeItem?: string;
   onSelectItem?: (id: string) => void;
 }
 
 export default function Sidebar({
-  mobileMenuOpen,
+  isMobile = false,
   onCloseMobileMenu,
   activeItem = 'home',
   onSelectItem,
@@ -172,34 +171,62 @@ export default function Sidebar({
     setExpandedItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const renderContent = (isMobile: boolean = false) => (
-    <div className="flex flex-col h-full bg-white select-none text-slate-700">
+  return (
+    <aside className="flex flex-col h-[100dvh] w-full max-w-full bg-[#0c0827] text-slate-300 select-none border-r border-white/10 overflow-hidden">
       {/* Sidebar Header / Brand */}
-      <div className="h-14 bg-[#0042b3] px-4 flex items-center justify-between shrink-0 border-b border-blue-700/40">
+      <div className="h-16 px-3.5 sm:px-4 flex items-center justify-between shrink-0 border-b border-white/10 bg-[#0c0827]">
         <Link 
           href="/dashboard" 
-          className="flex items-center gap-2 outline-none group"
-          onClick={() => isMobile && onCloseMobileMenu()}
+          className="flex items-center gap-2.5 outline-none group min-w-0"
+          onClick={() => isMobile && onCloseMobileMenu && onCloseMobileMenu()}
         >
-          <span className="text-white font-bold text-sm tracking-wider uppercase group-hover:text-white/90 transition-colors">
-            RANGPUR BIKE PARLOUR
-          </span>
-          <span className="w-2.5 h-2.5 bg-[#00e676] rounded-full inline-block shrink-0 shadow-[0_0_8px_#00e676]" />
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/30 group-hover:scale-105 transition-transform shrink-0">
+            <svg
+              className="w-4 h-4 text-white"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect
+                x="4"
+                y="4"
+                width="16"
+                height="16"
+                rx="4"
+                transform="rotate(45 12 12)"
+              />
+              <circle cx="12" cy="12" r="2" />
+            </svg>
+          </div>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="font-extrabold tracking-wider text-xs sm:text-sm text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-indigo-300 truncate">
+              RANGPUR BIKE
+            </span>
+            <span className="w-2 h-2 bg-emerald-400 rounded-full inline-block shrink-0 shadow-[0_0_8px_#34d399]" />
+          </div>
         </Link>
-        {isMobile && (
+
+        {isMobile && onCloseMobileMenu && (
           <button
             type="button"
             onClick={onCloseMobileMenu}
-            className="text-white/80 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors"
+            className="text-slate-300 hover:text-white p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors active:scale-95 shrink-0 ml-2"
             title="Close Sidebar"
+            aria-label="Close Sidebar"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         )}
       </div>
 
       {/* Navigation Menu List */}
-      <div className="flex-1 py-3 px-3 overflow-y-auto space-y-1">
+      <nav 
+        aria-label="Main Navigation"
+        className="flex-1 py-2.5 sm:py-3 px-2.5 sm:px-3 overflow-y-auto space-y-1 overscroll-contain [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]"
+      >
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeItem === item.id;
@@ -207,37 +234,37 @@ export default function Sidebar({
           const isExpanded = Boolean(expandedItems[item.id]);
 
           return (
-            <div key={item.id} className="rounded-lg">
+            <div key={item.id} className="rounded-xl">
               <button
                 type="button"
                 onClick={() => {
                   if (onSelectItem) onSelectItem(item.id);
                   if (hasSubmenu) {
                     toggleSubmenu(item.id);
-                  } else if (isMobile) {
+                  } else if (isMobile && onCloseMobileMenu) {
                     onCloseMobileMenu();
                   }
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[13.5px] font-medium transition-all ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? 'bg-[#e9edf5] text-[#0042b3] font-semibold'
-                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-[#0042b3]'
+                    ? 'bg-gradient-to-r from-indigo-600/30 to-indigo-500/15 text-white border border-indigo-500/40 shadow-[0_0_18px_rgba(99,102,241,0.2)] font-semibold'
+                    : 'text-slate-400 hover:bg-white/[0.05] hover:text-white border border-transparent'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                   <Icon
                     size={18}
-                    className={isActive ? 'text-[#0042b3]' : 'text-slate-500'}
+                    className={isActive ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.5)] shrink-0' : 'text-slate-400 shrink-0'}
                   />
-                  <span>{item.label}</span>
+                  <span className="truncate">{item.label}</span>
                 </div>
 
                 {hasSubmenu && (
-                  <span className="text-slate-400 transition-transform duration-200">
+                  <span className="text-slate-500 transition-transform duration-200 shrink-0 ml-2">
                     {isExpanded ? (
-                      <ChevronDown size={15} strokeWidth={2.5} />
+                      <ChevronDown size={14} strokeWidth={2.5} />
                     ) : (
-                      <ChevronLeft size={15} strokeWidth={2.5} />
+                      <ChevronLeft size={14} strokeWidth={2.5} />
                     )}
                   </span>
                 )}
@@ -245,17 +272,17 @@ export default function Sidebar({
 
               {/* Submenu Accordion */}
               {hasSubmenu && isExpanded && (
-                <div className="mt-1 mb-1.5 ml-4 pl-4 border-l-2 border-slate-200/80 space-y-1">
+                <div className="mt-1 mb-2 ml-3.5 sm:ml-4 pl-2.5 sm:pl-3 border-l border-indigo-500/30 space-y-1">
                   {item.submenus!.map((sub) => (
                     <button
                       key={sub.id}
                       type="button"
                       onClick={() => {
-                        if (isMobile) onCloseMobileMenu();
+                        if (isMobile && onCloseMobileMenu) onCloseMobileMenu();
                       }}
-                      className="w-full text-left text-xs text-slate-500 hover:text-[#0042b3] hover:bg-blue-50/60 py-1.5 px-2 rounded-md font-medium transition-colors flex items-center justify-between"
+                      className="w-full text-left text-[11px] sm:text-xs text-slate-400 hover:text-indigo-200 hover:bg-indigo-500/10 py-1.5 px-2.5 rounded-lg font-medium transition-colors flex items-center justify-between cursor-pointer"
                     >
-                      <span>{sub.label}</span>
+                      <span className="truncate">{sub.label}</span>
                     </button>
                   ))}
                 </div>
@@ -263,42 +290,28 @@ export default function Sidebar({
             </div>
           );
         })}
-      </div>
+      </nav>
 
-      {/* Sidebar Footer */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/70 shrink-0 text-xs text-slate-500 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-slate-600">
-          <ShieldCheck size={15} className="text-emerald-500" />
-          <span className="font-semibold">POS v1.0.0</span>
+      {/* Sidebar Footer Card */}
+      <div className="p-2.5 sm:p-3 border-t border-white/10 bg-white/[0.02] shrink-0">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-r from-indigo-950/50 to-purple-950/40 border border-indigo-500/20 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1 rounded-lg bg-indigo-500/20 text-indigo-300 shrink-0">
+              <Sparkles size={14} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold text-white tracking-wide truncate">POS Enterprise</p>
+              <p className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse shrink-0" />
+                Online
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] text-indigo-300 font-semibold bg-indigo-500/20 px-2 py-0.5 rounded-md border border-indigo-400/30 shrink-0">
+            v1.0.0
+          </span>
         </div>
-        <span className="text-[11px] text-slate-400 font-medium">Enterprise</span>
       </div>
-    </div>
-  );
-
-  return (
-    <>
-      {/* 1. Mobile Drawer Backdrop */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity duration-200"
-          onClick={onCloseMobileMenu}
-        />
-      )}
-
-      {/* 2. Mobile Drawer Off-Canvas Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 shadow-2xl lg:hidden transform transition-transform duration-300 ease-in-out ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        {renderContent(true)}
-      </div>
-
-      {/* 3. Desktop Sidebar Content */}
-      <div className="h-full w-64">
-        {renderContent(false)}
-      </div>
-    </>
+    </aside>
   );
 }

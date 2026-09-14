@@ -64,8 +64,8 @@ const menuItems: MenuItem[] = [
     label: 'Products', 
     icon: Package, 
     submenus: [
-      { id: 'all-products', label: 'List Products' },
-      { id: 'add-product', label: 'Add Product' },
+      { id: 'all-products', label: 'List Products', href: '/dashboard/products' },
+      { id: 'add-product', label: 'Add Product', href: '/dashboard/products/create' },
       { id: 'print-labels', label: 'Print Labels' },
       { id: 'categories', label: 'Categories' },
       { id: 'brands', label: 'Brands' },
@@ -188,6 +188,9 @@ export default function Sidebar({
     ) {
       setExpandedItems((prev) => ({ ...prev, contacts: true }));
     }
+    if (pathname?.startsWith('/dashboard/products')) {
+      setExpandedItems((prev) => ({ ...prev, products: true }));
+    }
   }, [pathname]);
 
   const toggleSubmenu = (id: string) => {
@@ -267,6 +270,8 @@ export default function Sidebar({
               pathname?.startsWith('/dashboard/customers') ||
               pathname?.startsWith('/dashboard/customer-groups') ||
               pathname?.startsWith('/dashboard/import-contacts')
+            : item.id === 'products'
+            ? pathname?.startsWith('/dashboard/products')
             : activeItem === item.id;
 
           const itemClass = `w-full flex items-center justify-between px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 cursor-pointer ${

@@ -10,12 +10,8 @@ import {
 } from 'react-icons/fi';
 import { BsArrowDownUp } from 'react-icons/bs';
 
-interface RoleItem {
-  id: string;
-  name: string;
-  canEdit: boolean;
-  canDelete: boolean;
-}
+import DeleteRoleModal from './DeleteRoleModal';
+import { RoleItem } from './EditRoleModal';
 
 const initialRoles: RoleItem[] = [
   { id: '1', name: 'Admin', canEdit: false, canDelete: false },
@@ -26,6 +22,19 @@ export default function RolesPage() {
   const [roles, setRoles] = useState<RoleItem[]>(initialRoles);
   const [entriesCount, setEntriesCount] = useState<number>(25);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Delete modal state
+  const [deletingRole, setDeletingRole] = useState<RoleItem | null>(null);
+
+  const handleSaveRole = (updatedRole: RoleItem) => {
+    setRoles((prev) =>
+      prev.map((r) => (r.id === updatedRole.id ? updatedRole : r))
+    );
+  };
+
+  const handleDeleteRole = (roleId: string) => {
+    setRoles((prev) => prev.filter((r) => r.id !== roleId));
+  };
 
   const filteredRoles = roles.filter((role) =>
     role.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -122,17 +131,18 @@ export default function RolesPage() {
                         {item.canEdit || item.canDelete ? (
                           <div className="flex items-center gap-2">
                             {item.canEdit && (
-                              <button
-                                type="button"
+                              <Link
+                                href={`/dashboard/rules/edit?id=${item.id}`}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs font-medium transition-colors cursor-pointer"
                               >
                                 <FiEdit className="w-3 h-3" />
                                 <span>Edit</span>
-                              </button>
+                              </Link>
                             )}
                             {item.canDelete && (
                               <button
                                 type="button"
+                                onClick={() => setDeletingRole(item)}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium transition-colors cursor-pointer"
                               >
                                 <FiTrash2 className="w-3 h-3" />
@@ -193,6 +203,14 @@ export default function RolesPage() {
       <footer className="mt-8 text-xs text-slate-500 text-left max-w-7xl mx-auto w-full">
         DATABYTE - V6.5 | Copyright © 2026 All rights reserved.
       </footer>
+
+      {/* Delete Role Modal */}
+      <DeleteRoleModal
+        isOpen={Boolean(deletingRole)}
+        onClose={() => setDeletingRole(null)}
+        onConfirm={handleDeleteRole}
+        role={deletingRole}
+      />
     </div>
   );
 }
